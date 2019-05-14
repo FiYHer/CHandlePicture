@@ -3,37 +3,35 @@
 
 VOID CBitmapHandle::InitBitmapHandle()
 {
-	//初始化资源
-
 	//图像信息头指针
-	m_lpBitmapInfoHead = nullptr;
+	m_lpBitInfoHead = nullptr;
 
 	//图像数据指针
-	m_lpBitmapDibBuffer = nullptr;
+	m_lpBitDIB = nullptr;
 
 	//图像的大小
-	m_nBitmapSize = NULL;
+	m_nBitSize = NULL;
 
 	//图像数据指针
-	m_lpBitmapDataBuffer = nullptr;
+	m_lpBitData = nullptr;
 
 	//像素位数
-	m_nBitmapBitCount = NULL;
+	m_nBitBitCount = NULL;
 
 	//颜色表长度
-	m_nBitmapColorTableLen = NULL;
+	m_nBitColorTableLen = NULL;
 }
 
 //清理空间
 VOID CBitmapHandle::ClearBitmapHandle()
 {
 	//DIB不为空就delete
-	if (m_lpBitmapDibBuffer != NULL)
+	if (m_lpBitDIB)
 	{
-		delete[] m_lpBitmapDibBuffer;
-		m_lpBitmapDibBuffer = nullptr;
-		m_lpBitmapDataBuffer = nullptr;
-		m_lpBitmapInfoHead = nullptr;
+		delete[] m_lpBitDIB;
+		m_lpBitDIB = nullptr;
+		m_lpBitData = nullptr;
+		m_lpBitInfoHead = nullptr;
 	}
 }
 
@@ -55,14 +53,13 @@ inline VOID PrintDebugString()
 #if defined(DEBUG) | defined(_DEBUG)
 	CHAR szBuf[20] = { 0 };
 	wsprintfA(szBuf, "Error Code: %d", ::GetLastError());
-	MessageBox(NULL, szBuf, NULL, MB_OK);
+	MessageBoxA(NULL, szBuf, NULL, MB_OK);
 #endif
 }
 
-
 //DIB读取
-//#lpszBmpFilePath: bmp文件路径
-BOOL CBitmapHandle::ReadBitmap(CONST PCHAR lpszBmpFilePath)
+//#szBitPath: bmp文件路径
+BOOL CBitmapHandle::ReadBit(CONST PCHAR szBitPath)
 {
 	//返回结果
 	BOOL bRet = FALSE;
@@ -82,13 +79,13 @@ BOOL CBitmapHandle::ReadBitmap(CONST PCHAR lpszBmpFilePath)
 	do 
 	{
 		//判断传入空字符串的情况
-		if (lpszBmpFilePath == nullptr || strlen(lpszBmpFilePath) == NULL)
+		if (!szBitPath || !strlen(szBitPath))
 		{
 			break;
 		}
 
 		//打开文件
-		hFile = CreateFile(lpszBmpFilePath, GENERIC_READ, NULL,
+		hFile = CreateFile(szBitPath, GENERIC_READ, NULL,
 			NULL, OPEN_EXISTING, NULL, NULL);
 		if (hFile == INVALID_HANDLE_VALUE)
 		{
@@ -98,63 +95,62 @@ BOOL CBitmapHandle::ReadBitmap(CONST PCHAR lpszBmpFilePath)
 
 		//读取bmp文件头信息
 		ReadFile(hFile, &stBitmapFileHead, sizeof(BITMAPFILEHEADER), &dwReadLen, NULL);
-		if (dwReadLen == NULL)
+		if (!dwReadLen)
 		{
 			PrintDebugString();
 			break;
 		}
 
 		//以前的DIB信息还在的话就删除一下
-		if (m_lpBitmapDibBuffer != nullptr)
+		if (m_lpBitDIB)
 		{
-			delete[] m_lpBitmapDibBuffer;
-			m_lpBitmapDibBuffer = nullptr;
+			delete[] m_lpBitDIB;
+			m_lpBitDIB = nullptr;
 		}
 
 		//获取一下bmp文件的大小
 		GetFileSizeEx(hFile, &stBitmapFileSize);
-		if (stBitmapFileSize.QuadPart == NULL)
+		if (!stBitmapFileSize.QuadPart)
 		{
 			PrintDebugString();
 			break;
 		}
 
 		//信息头结构的大小加上图片的大小【不要文件头了因为前面已经获取了】
-		m_nBitmapSize = (INT)stBitmapFileSize.QuadPart;
-		m_lpBitmapDibBuffer = new BYTE[m_nBitmapSize - sizeof(BITMAPFILEHEADER)];
+		m_nBitSize = static_cast<INT>(stBitmapFileSize.QuadPart);
+		m_lpBitDIB = new BYTE[m_nBitSize - sizeof(BITMAPFILEHEADER)];
 
 		//清空大小
-		memset(m_lpBitmapDibBuffer, 0,
-			sizeof(BYTE)*(m_nBitmapSize - sizeof(BITMAPFILEHEADER)));
+		ZeroMemory(m_lpBitDIB,m_nBitSize - sizeof(BITMAPFILEHEADER));
 
 		//把文件头后面的数据一起读取进来内存
-		ReadFile(hFile, m_lpBitmapDibBuffer, 
-			m_nBitmapSize - sizeof(BITMAPFILEHEADER), &dwReadLen, NULL);
-		if (dwReadLen == NULL)
+		ReadFile(hFile, m_lpBitDIB, 
+			m_nBitSize - sizeof(BITMAPFILEHEADER), &dwReadLen, NULL);
+		if (!dwReadLen)
 		{
 			PrintDebugString();
 			break;
 		}
 
 		//先保存bmp的信息头结构
-		m_lpBitmapInfoHead = (LPBITMAPINFOHEADER)m_lpBitmapDibBuffer;
+		m_lpBitInfoHead = (LPBITMAPINFOHEADER)m_lpBitDIB;
 		//宽度
-		m_nBitmapWidth = m_lpBitmapInfoHead->biWidth;
+		m_nBitWidth = m_lpBitInfoHead->biWidth;
 		//高度
-		m_nBitmapHeight = m_lpBitmapInfoHead->biHeight;
+		m_nBitHeight = m_lpBitInfoHead->biHeight;
 		//每一位的像素占的字节
-		m_nBitmapBitCount = m_lpBitmapInfoHead->biBitCount;
+		m_nBitBitCount = m_lpBitInfoHead->biBitCount;
 
 		//查看是不是有调色板,0就是不需要调色板结构的
 		//需要调色板的我们不处理
-		m_nBitmapColorTableLen = BmpGetColorTableLen(m_lpBitmapInfoHead->biBitCount);
-		if (m_nBitmapColorTableLen != 0)
+		m_nBitColorTableLen = GetBitColorLen(m_lpBitInfoHead->biBitCount);
+		if (m_nBitColorTableLen != 0)
 		{
 			break;
 		}
 
 		//得到位图数据RGB数据指针
-		m_lpBitmapDataBuffer = (LPBYTE)m_lpBitmapDibBuffer + sizeof(BITMAPINFOHEADER);
+		m_lpBitData = (LPBYTE)m_lpBitDIB + sizeof(BITMAPINFOHEADER);
 
 		bRet = TRUE;
 	} while (FALSE);
@@ -166,7 +162,7 @@ BOOL CBitmapHandle::ReadBitmap(CONST PCHAR lpszBmpFilePath)
 }
 
 //DIB写入
-BOOL CBitmapHandle::WriteBitmap(CONST PCHAR lpszBmpFilePath)
+BOOL CBitmapHandle::WriteBit(CONST PCHAR szBitPath)
 {
 	//返回结果
 	BOOL bRet = FALSE;
@@ -186,7 +182,7 @@ BOOL CBitmapHandle::WriteBitmap(CONST PCHAR lpszBmpFilePath)
 	do
 	{
 		//保存bmp位图的路径
-		if (lpszBmpFilePath == nullptr || strlen(lpszBmpFilePath) == NULL)
+		if (!szBitPath || !strlen(szBitPath))
 		{
 			break;
 		}
@@ -197,7 +193,7 @@ BOOL CBitmapHandle::WriteBitmap(CONST PCHAR lpszBmpFilePath)
 			sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);//位移
 
 		//这里是创建文件
-		hFile = CreateFile(lpszBmpFilePath, GENERIC_ALL, 
+		hFile = CreateFile(szBitPath, GENERIC_ALL, 
 			NULL, NULL, CREATE_ALWAYS, NULL, NULL);
 		if (hFile == INVALID_HANDLE_VALUE)
 		{
@@ -208,16 +204,16 @@ BOOL CBitmapHandle::WriteBitmap(CONST PCHAR lpszBmpFilePath)
 		//写入位图的头文件
 		WriteFile(hFile, (LPVOID)&stBitmapFileHead, 
 			sizeof(BITMAPFILEHEADER), &dwWriteLen, NULL);
-		if (dwWriteLen == NULL)
+		if (!dwWriteLen)
 		{
 			PrintDebugString();
 			break;
 		}
 
 		//写入位图的信息头
-		WriteFile(hFile, (LPVOID)m_lpBitmapInfoHead,
+		WriteFile(hFile, (LPVOID)m_lpBitInfoHead,
 			sizeof(BITMAPINFOHEADER), &dwWriteLen, NULL);
-		if(dwWriteLen == NULL)
+		if(!dwWriteLen)
 		{
 			PrintDebugString();
 			break;
@@ -225,10 +221,10 @@ BOOL CBitmapHandle::WriteBitmap(CONST PCHAR lpszBmpFilePath)
 		
 		//这里就是写入位图的数据
 		//(m_nBitmapWidth*m_nBitmapBitCount / 8 + 3) / 4 * 4 就是一行的大小
-		bmpBuffSize = (m_nBitmapWidth*m_nBitmapBitCount / 8 + 3)
-			/ 4 * 4 * m_nBitmapHeight;
-		WriteFile(hFile, m_lpBitmapDataBuffer, bmpBuffSize, &dwWriteLen, NULL);
-		if(dwWriteLen == NULL)
+		bmpBuffSize = (m_nBitWidth*m_nBitBitCount / 8 + 3)
+			/ 4 * 4 * m_nBitHeight;
+		WriteFile(hFile, m_lpBitData, bmpBuffSize, &dwWriteLen, NULL);
+		if(!dwWriteLen)
 		{
 			PrintDebugString();
 			break;
@@ -245,7 +241,7 @@ BOOL CBitmapHandle::WriteBitmap(CONST PCHAR lpszBmpFilePath)
 }
 
 //获取颜色表的长度
-INT CBitmapHandle::BmpGetColorTableLen(INT nBitCount)
+INT CBitmapHandle::GetBitColorLen(INT nBitCount)
 {
 	INT nColorTableLen = NULL;
 	switch (nBitCount)
@@ -270,29 +266,29 @@ INT CBitmapHandle::BmpGetColorTableLen(INT nBitCount)
 }
 
 //图像的绘制
-VOID CBitmapHandle::BitmapDraw(HDC hdc,
+VOID CBitmapHandle::BitDraw(HDC hdc,
 	INT nBeginX,
 	INT nBeginY,
 	LPBITMAPINFOHEADER lpBmpHeadInfo,
 	LPBYTE lpBmpData)
 {
 	//指向当前的位图数据和位图信息头指针
-	LPBYTE lpTempData = m_lpBitmapDibBuffer;
-	LPBITMAPINFOHEADER lpTempInfo = m_lpBitmapInfoHead;
+	LPBYTE lpTempData = m_lpBitDIB;
+	LPBITMAPINFOHEADER lpTempInfo = m_lpBitInfoHead;
 
 	//有位图数据的话
-	if (lpBmpData != nullptr)
+	if (lpBmpData)
 	{
 		lpTempData = lpBmpData;
 	}
 	//有位图信息头指针
-	if (lpBmpHeadInfo != nullptr)
+	if (lpBmpHeadInfo)
 	{
 		lpTempInfo = lpBmpHeadInfo;
 	}
 
 	//不为空就绘制
-	if (lpTempData != nullptr && lpTempInfo != nullptr)
+	if (lpTempData && lpTempInfo)
 	{
 		SetStretchBltMode(hdc, HALFTONE);
 		StretchDIBits(hdc, nBeginX, nBeginY,
@@ -303,16 +299,16 @@ VOID CBitmapHandle::BitmapDraw(HDC hdc,
 }
 
 //返回位图数据的常量指针
-LPBYTE CBitmapHandle::GetImgData(INT &nBmpSize)CONST
+LPBYTE CBitmapHandle::BitDIB(INT &nBmpSize)CONST
 {
 	//返回文件大小
-	nBmpSize = m_nBitmapSize - sizeof(BITMAPINFOHEADER);
+	nBmpSize = m_nBitSize - sizeof(BITMAPINFOHEADER);
 
 	//返回位图数据指针
-	return m_lpBitmapDataBuffer;
+	return m_lpBitData;
 }
 
-LPBITMAPINFOHEADER CBitmapHandle::GetImgInfoHead() CONST
+LPBITMAPINFOHEADER CBitmapHandle::BitInfo() CONST
 {
-	return m_lpBitmapInfoHead;
+	return m_lpBitInfoHead;
 }

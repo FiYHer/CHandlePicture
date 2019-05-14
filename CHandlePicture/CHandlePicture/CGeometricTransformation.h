@@ -10,42 +10,47 @@ class CGeometricTransformation:public CBitmapHandle
 {
 private:
 	//原位图数据
-	LPBYTE m_lpOldBuffer;
+	LPBYTE m_pBit;
 
 	//新位图数据
-	LPBYTE m_lpNewBuffer;
+	LPBYTE m_pNewBit;
 
 	//位图信息头
-	BITMAPINFOHEADER m_stInfoHead;
+	BITMAPINFOHEADER m_stBitInfo;
 private:
 	/*
 	初始化
 	*/
-	VOID InitGeometricTransformation();
+	VOID Init();
 
 	/*
 	清理
 	*/
-	VOID ClearGeometricTransformation();
+	VOID Clear();
 
 	/*
 	获取位图数据
 	*/
-	VOID GetBitmapData();
+	VOID GetBitBuffer();
 
 	/*
 	获取位图信息头结构体
 	*/
-	VOID GetBitmapInfoHead();
+	VOID GetBitInfo();
 
 public:
 	CGeometricTransformation();
 	~CGeometricTransformation();
 public:
 	/*
-	位图平移
+	平移
 	*/
-	VOID BitmapMove(INT nOffsetX,INT nOffsetY);
+	VOID BitMove(INT nOffsetX,INT nOffsetY);
+
+	/*
+	缩放
+	*/
+	VOID Zoom(double dX,double dY);
 
 	/*
 	水平镜像
@@ -63,15 +68,15 @@ public:
 	VOID Clockwise90();
 
 
-//图像的绘制
-/*
-@hdc:上下文
-@nBeginX:x轴开始坐标
-@nBeginY:y轴开始坐标
-@lpBmpHeadInfo:位图信息头指针
-@BmpData:位图数据指针
-*/
-	virtual VOID BitmapDraw(HDC hdc, 
+	//图像的绘制
+	/*
+	@hdc:上下文
+	@nBeginX:x轴开始坐标
+	@nBeginY:y轴开始坐标
+	@lpBmpHeadInfo:位图信息头指针
+	@BmpData:位图数据指针
+	*/
+	virtual VOID BitDraw(HDC hdc, 
 		INT nBeginX = NULL,
 		INT nBeginY = NULL,
 		LPBITMAPINFOHEADER lpBmpHeadInfo = nullptr,

@@ -11,12 +11,12 @@ LRESULT CALLBACK Proc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam)
 	switch (message)
 	{
 	case WM_CREATE:
-		g_pBitMap.ReadBitmap("H://111.bmp");
+		g_pBitMap.ReadBit("H://111.bmp");
 		break;
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-		g_pBitMap.Clockwise90();
-		g_pBitMap.BitmapDraw(hdc);
+		g_pBitMap.Zoom(0.6, 0.6);
+		g_pBitMap.BitDraw(hdc);
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_CLOSE:

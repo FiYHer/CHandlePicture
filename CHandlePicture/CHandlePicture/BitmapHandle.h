@@ -11,28 +11,28 @@ class CBitmapHandle
 {
 private:
 	//图像DIB指针
-	LPBYTE m_lpBitmapDibBuffer;
+	LPBYTE m_lpBitDIB;
 
 	//颜色表长度
-	INT m_nBitmapColorTableLen;
+	INT m_nBitColorTableLen;
 
 	//图像数据指针
-	LPBYTE m_lpBitmapDataBuffer;
+	LPBYTE m_lpBitData;
 
 	//每个像素占的位数
-	INT m_nBitmapBitCount;
+	INT m_nBitBitCount;
 
 	//图片的大小
-	INT m_nBitmapSize;
+	INT m_nBitSize;
 
 	//图像的宽度
-	INT m_nBitmapWidth;
+	INT m_nBitWidth;
 
 	//图像的高度
-	INT m_nBitmapHeight;
+	INT m_nBitHeight;
 
 	//图像信息头指针
-	LPBITMAPINFOHEADER m_lpBitmapInfoHead;
+	LPBITMAPINFOHEADER m_lpBitInfoHead;
 private:
 	//初始化
 	VOID InitBitmapHandle();
@@ -48,13 +48,13 @@ public:
 	CBitmapHandle(CBitmapHandle&&) = delete;
 public:
 	//DIB读取
-	BOOL ReadBitmap(CONST PCHAR pszBitmapFilePath);
+	BOOL ReadBit(CONST PCHAR szBitPath);
 
 	//DIB写入
-	BOOL WriteBitmap(CONST PCHAR pszBitmapFilePath);
+	BOOL WriteBit(CONST PCHAR szBitPath);
 
 	//获取颜色表的长度
-	INT BmpGetColorTableLen(INT);
+	INT GetBitColorLen(INT nLen);
 
 	//图像的绘制
 	/*
@@ -64,15 +64,15 @@ public:
 	@lpBmpHeadInfo:位图信息头指针
 	@BmpData:位图数据指针
 	*/
-	virtual VOID BitmapDraw(HDC hdc,
+	virtual VOID BitDraw(HDC hdc,
 		INT nBeginX = NULL,
 		INT nBeginY = NULL,
 		LPBITMAPINFOHEADER lpBmpHeadInfo = nullptr,
 		LPBYTE BmpData = nullptr);
 
 	//返回位图数据的常量指针,给需要自己绘图的人
-	LPBYTE GetImgData(INT &nBmpSize)CONST;
+	LPBYTE BitDIB(INT &nBmpSize)CONST;
 
 	//返回位图信息头结构体指针
-	LPBITMAPINFOHEADER GetImgInfoHead()CONST;
+	LPBITMAPINFOHEADER BitInfo()CONST;
 };
